@@ -87,11 +87,36 @@ func (c *Connection) Unsubscribe(h Headers) error {
 	}
 
 	if oki {
-		c.subsLock.Lock()
-		close(c.subs[sid])
-		delete(c.subs, sid)
-		c.subsLock.Unlock()
+		c.deleteSubscription(sid)
 	}
 	c.log(UNSUBSCRIBE, "end", h)
 	return nil
+}
+
+/*
+	Unsubscribe from an automatic STOMP subscription.
+
+	The id is the subscription ID. The subscription MUST currently exist for
+	this session.
+*/
+func (c *Connection) UnsubscribeAuto(id string) error {
+	c.subsLock.Lock()
+	_, ok := c.subs[id]
+	c.subsLock.Unlock()
+	if !ok {
+		return EBADSID
+	}
+
+	c.deleteSubscription(id)
+	return nil
+}
+
+/*
+	Delete a subscription.
+*/
+func (c *Connection) deleteSubscription(id string) {
+	c.subsLock.Lock()
+	close(c.subs[id])
+	delete(c.subs, id)
+	c.subsLock.Unlock()
 }

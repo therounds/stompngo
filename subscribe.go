@@ -79,6 +79,28 @@ func (c *Connection) Subscribe(h Headers) (<-chan MessageData, error) {
 }
 
 /*
+	Subscribe to an automatic STOMP subscription.
+
+	The id is the subscription ID.
+
+	This is useful for subscriptions that are automatically created by the
+	broker after sending a message, such as RabbitMQ's temporary queues:
+	https://www.rabbitmq.com/stomp.html#d.tqd
+
+	After sending a message with a "reply-to" header for a temporary queue, the
+	broker automatically subscribes the session to the temporary queue. A
+	SUBSCRIBE command does not work in this case, but a MessageData channel is
+	still needed in order to receive replies sent to the temporary queue.
+
+	This should be called before calling Send, so that the channel exists when
+	the subscription is established.
+*/
+func (c *Connection) SubscribeAuto(id string) (<-chan MessageData, error) {
+	ch, err, _ := c.establishSubscription(Headers{"id", id})
+	return ch, err
+}
+
+/*
 	Handle subscribe id.
 */
 func (c *Connection) establishSubscription(h Headers) (<-chan MessageData, error, Headers) {
